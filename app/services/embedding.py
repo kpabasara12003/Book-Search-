@@ -35,12 +35,8 @@ class EmbeddingService:
         return {int(k): float(v / total_words) for k, v in counts.items()}
 
     async def get_hybrid_embeddings(self, text: str) -> tuple[list[float], dict[int, float]]:
-        """
-        Fetches the dense vector from DigitalOcean's Inference Gateway using OpenAI-compatible specs,
-        and couples it with a localized lexical sparse vector for perfect hybrid retrieval accuracy.
-        """
+     
         try:
-            # Match DigitalOcean's serverless inference format exactly
             payload = {
                 "model": "bge-m3",
                 "input": [text],
