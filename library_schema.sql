@@ -49,7 +49,7 @@ CREATE TABLE books (
     language         VARCHAR(50),
     publication_year INTEGER,
     pages            INTEGER,
-    summary          TEXT,            -- Used for semantic search embedding
+    summary          VARCHAR (250),            -- Used for semantic search embedding
     category_id      INTEGER NOT NULL,
     total_copies     INT NOT NULL DEFAULT 0,    -- Maintained by trigger
     created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

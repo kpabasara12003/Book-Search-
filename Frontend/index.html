@@ -29,19 +29,19 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body class="bg-black text-green-50 overflow-hidden w-screen h-screen flex flex-col font-sans select-none">
+<body class="bg-green-50 text-emerald-950 overflow-hidden w-screen h-screen flex flex-col font-sans select-none">
 
     <!-- Top Navigation / Status Bar -->
     <header
-        class="h-16 flex items-center justify-between px-8 bg-black/60 backdrop-blur-md border-b border-green-500/20 z-50 shadow-lg">
+        class="h-16 flex items-center justify-between px-8 bg-white/70 backdrop-blur-md border-b border-green-200 z-50 shadow-sm relative">
         <div class="flex items-center gap-3">
-            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            <span class="font-bold text-green-200 tracking-wider">UNILIV_KIOSK_01</span>
+            <span class="font-bold text-green-800 tracking-wider">UNILIV_KIOSK_01</span>
         </div>
-        <div class="flex items-center gap-6 text-green-500/80 font-mono text-sm">
+        <div class="flex items-center gap-6 text-green-700 font-mono text-sm">
             <span class="flex items-center gap-2"><span
                     class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_theme(colors.emerald.500)] animate-pulse"></span>
                 SYSTEM ONLINE</span>
@@ -55,11 +55,11 @@
     </main>
 
     <div id="loading-overlay"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col items-center justify-center transition-opacity duration-300">
+        class="fixed inset-0 bg-white/70 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center transition-opacity duration-300">
         <div
-            class="w-16 h-16 border-4 border-green-500/20 border-t-green-400 rounded-full animate-spin mb-4 shadow-[0_0_15px_theme(colors.green.500)]">
+            class="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4 shadow-[0_0_15px_theme(colors.green.200)]">
         </div>
-        <div class="loading-msg text-xl font-bold text-green-300">Working...</div>
+        <div class="loading-msg text-xl font-bold text-green-800">Working...</div>
     </div>
 
     <!-- Toast Notifications Container -->
@@ -69,7 +69,7 @@
 
     <!-- Unified Dialog Modal -->
     <div id="modal-overlay"
-        class="fixed inset-0 bg-black/70 backdrop-blur-md z-[80] hidden flex items-center justify-center transition-opacity duration-300">
+        class="fixed inset-0 bg-black/40 backdrop-blur-md z-[80] hidden flex items-center justify-center transition-opacity duration-300">
         <!-- Default layout for simple confirms, can be overridden by views -->
         <div id="modal-box"
             class="modal-inner glass-card p-10 rounded-3xl w-full max-w-md shadow-2xl relative transition-all duration-300 transform scale-95 opacity-0">

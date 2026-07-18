@@ -8,54 +8,64 @@ const SearchView = {
 
         <!-- Header -->
         <div class="flex items-center gap-6 mb-4 shrink-0">
-          <button class="btn btn-ghost p-3 rounded-xl border border-green-500/20 text-green-300 hover:text-green-100 hover:border-green-400/50 hover:bg-green-500/10" onclick="App.goBack()">
+          <button class="btn btn-ghost p-3 rounded-xl border border-green-300/50 text-green-700 hover:text-green-900 hover:border-green-500/50 hover:bg-green-100/50" onclick="App.goBack()">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
           </button>
           <div class="flex-1 relative">
-            <input id="search-input" type="text" class="kiosk-input w-full pl-16 text-2xl h-20 shadow-2xl z-10 relative bg-black/50" placeholder="Search by title, author, or story summary..." autocomplete="off">
-            <svg class="w-8 h-8 text-green-500/50 absolute left-5 top-6 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="search-input" type="text" class="kiosk-input w-full pl-16 text-2xl h-20 shadow-lg z-10 relative bg-white/80 text-green-900 placeholder:text-green-700/40" placeholder="Search by title, author, or story summary..." autocomplete="off">
+            <svg class="w-8 h-8 text-green-600/50 absolute left-5 top-6 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
-          <button class="btn btn-primary h-20 px-10 text-2xl" onclick="SearchView.performSearch()">
+          <button class="btn btn-primary h-20 px-10 text-2xl shadow-lg" onclick="SearchView.performSearch()">
             Search
           </button>
         </div>
 
         <!-- Controls -->
-        <div class="flex gap-4 mb-8 shrink-0 z-10 relative h-14">
+        <div class="flex flex-col gap-4 mb-8 shrink-0 z-10 relative">
            <!-- Modes toggle -->
-           <div class="bg-black/50 p-1.5 rounded-xl border border-green-500/20 flex shadow-inner h-full shrink-0">
-               <button id="mode-semantic" class="px-6 rounded-lg text-lg font-bold bg-green-600 shadow-md text-white transition-all flex items-center justify-center" onclick="SearchView.setMode('semantic')">
-                   Semantic (AI)
-               </button>
-               <button id="mode-standard" class="px-6 rounded-lg text-lg font-bold text-green-400 hover:text-green-200 transition-all flex items-center justify-center opacity-70" onclick="SearchView.setMode('standard')">
-                   Standard (SQL)
-               </button>
+           <div class="bg-white/70 p-2 rounded-2xl border border-green-300/50 grid grid-cols-2 shadow-sm min-h-[72px] shrink-0 touch-manipulation">
+                <button id="mode-standard" class="px-6 rounded-xl text-xl font-bold text-green-800 hover:text-green-900 transition-all flex items-center justify-center opacity-70 min-h-[56px]" onclick="SearchView.setMode('standard')">
+                   Search by Title or Author
+               </button>  
+               <button id="mode-semantic" class="px-6 rounded-xl text-xl font-bold bg-green-600 shadow-md text-white transition-all flex items-center justify-center min-h-[56px]" onclick="SearchView.setMode('semantic')">
+                   Summary of the Book  
+               </button>   
+               
            </div>
-           
-           <select id="search-category" class="kiosk-input h-full flex-1 bg-black/50 border-green-500/20 text-lg hidden">
-              <option value="">All Categories</option>
-           </select>
+           <div id="search-category-wrapper" class="hidden relative">
+             <input id="search-category" type="hidden" value="">
+             <div class="flex items-center gap-3">
+                <div class="text-green-800 font-bold text-lg shrink-0">Category</div>
+                <div id="search-category-scroll" class="flex-1 min-w-0 overflow-x-auto custom-scroll">
+                   <div id="search-category-chips" class="flex gap-3 pb-2 pr-3 snap-x snap-mandatory">
+                      <button type="button" data-category-id="" class="category-chip snap-start shrink-0 min-h-[58px] px-7 rounded-2xl text-lg font-bold bg-green-600 text-white shadow-md border border-green-500 touch-manipulation" onclick="SearchView.setCategory('')">
+                         All Categories
+                      </button>
+                   </div>
+                </div>
+             </div>
+           </div>
         </div>
 
         <!-- Results container -->
-        <div class="flex-1 min-h-0 bg-black/20 rounded-3xl border border-green-500/10 p-6 flex flex-col relative z-10 overflow-hidden">
+        <div class="flex-1 min-h-0 bg-white/40 rounded-3xl border border-green-300/40 p-6 flex flex-col relative z-10 overflow-hidden shadow-xl">
            <div class="flex justify-between items-center mb-4 shrink-0 px-2" id="search-header">
-               <h3 class="text-xl font-bold text-green-300/60 uppercase tracking-wider">Search Results</h3>
-               <span id="results-count" class="text-green-500/60 font-mono">0 found</span>
+               <h3 class="text-xl font-bold text-green-800 uppercase tracking-wider">Search Results</h3>
+               <span id="results-count" class="text-green-600 font-mono">0 found</span>
            </div>
            
            <div id="search-results-list" class="flex-1 overflow-y-auto custom-scroll space-y-4 px-2 pb-4">
-              <div class="h-full flex flex-col items-center justify-center text-green-500/30 select-none">
+              <div class="h-full flex flex-col items-center justify-center text-green-700/50 select-none">
                  <svg class="w-24 h-24 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                 <p class="text-2xl font-light">Type something to explore the library</p>
-                 <p class="text-lg mt-2 font-mono">Powered by vector semantic search</p>
+                 <p class="text-2xl font-semibold">Type something to explore the library</p>
+                 <p class="text-lg mt-2 font-mono opacity-80">Powered by vector semantic search</p>
               </div>
            </div>
         </div>
       </div>
     `);
 
-        STATE.searchMode = STATE.searchMode || 'semantic';
+        STATE.searchMode = 'standard';
         this.setMode(STATE.searchMode, false);
 
         // Asynchronously load categories
@@ -80,37 +90,55 @@ const SearchView = {
         STATE.searchMode = mode;
         const sem = document.getElementById('mode-semantic');
         const std = document.getElementById('mode-standard');
-        const cat = document.getElementById('search-category');
+        const catWrapper = document.getElementById('search-category-wrapper');
+        const activeModeClass = "px-6 rounded-xl text-xl font-bold bg-green-600 shadow-md text-white transition-all flex items-center justify-center min-h-[56px]";
+        const idleModeClass = "px-6 rounded-xl text-xl font-bold text-green-800 hover:text-green-900 transition-all flex items-center justify-center opacity-70 min-h-[56px]";
 
         if (mode === 'semantic') {
-            sem.className = "px-6 rounded-lg text-lg font-bold bg-green-600 shadow-md text-white transition-all flex items-center justify-center";
-            std.className = "px-6 rounded-lg text-lg font-bold text-green-400 hover:text-green-200 transition-all flex items-center justify-center opacity-70";
-            cat.classList.add('hidden');
+            sem.className = activeModeClass;
+            std.className = idleModeClass;
+            catWrapper.classList.add('hidden');
         } else {
-            std.className = "px-6 rounded-lg text-lg font-bold bg-green-600 shadow-md text-white transition-all flex items-center justify-center";
-            sem.className = "px-6 rounded-lg text-lg font-bold text-green-400 hover:text-green-200 transition-all flex items-center justify-center opacity-70";
-            cat.classList.remove('hidden');
+            std.className = activeModeClass;
+            sem.className = idleModeClass;
+            catWrapper.classList.remove('hidden');
         }
 
         if (clear) {
-            document.getElementById('search-results-list').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-green-500/30 select-none">
-                    <p class="text-2xl font-light">Ready to search using ${mode === 'semantic' ? 'AI Semantics' : 'Standard Text & Categories'}</p>
-                 </div>`;
+            document.getElementById('search-results-list').innerHTML = `<div class="h-full flex flex-col items-center justify-center text-green-700/50 select-none">
+                 <p class="text-2xl font-semibold">Ready to search using ${mode === 'semantic' ? 'AI Semantics' : 'Standard Text & Categories'}</p>
+              </div>`;
             document.getElementById('results-count').textContent = '0 found';
             STATE.searchResults = [];
         }
     },
 
+    setCategory(categoryId) {
+        const selected = String(categoryId || '');
+        const input = document.getElementById('search-category');
+        if (input) input.value = selected;
+
+        document.querySelectorAll('.category-chip').forEach(chip => {
+            const isActive = chip.dataset.categoryId === selected;
+            chip.className = isActive
+                ? "category-chip snap-start shrink-0 min-h-[58px] px-7 rounded-2xl text-lg font-bold bg-green-600 text-white shadow-md border border-green-500 touch-manipulation"
+                : "category-chip snap-start shrink-0 min-h-[58px] px-7 rounded-2xl text-lg font-bold bg-white/80 text-green-800 border border-green-300/70 shadow-sm active:scale-95 touch-manipulation";
+        });
+    },
+
     async loadCategories() {
         try {
             const cats = await API.getCategories();
-            const sel = document.getElementById('search-category');
-            if (!sel) return;
+            const chips = document.getElementById('search-category-chips');
+            if (!chips) return;
             cats.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.category_id;
-                opt.textContent = c.category_name;
-                sel.appendChild(opt);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.categoryId = String(c.category_id);
+                btn.className = "category-chip snap-start shrink-0 min-h-[58px] px-7 rounded-2xl text-lg font-bold bg-white/80 text-green-800 border border-green-300/70 shadow-sm active:scale-95 touch-manipulation";
+                btn.textContent = c.category_name;
+                btn.onclick = () => SearchView.setCategory(c.category_id);
+                chips.appendChild(btn);
             });
         } catch (err) {
             console.error("Failed to load categories", err);

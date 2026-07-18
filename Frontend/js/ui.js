@@ -7,10 +7,10 @@ const UI = {
         if (!container) return;
 
         const colors = {
-            success: 'border-emerald-500/60 bg-emerald-900/80 text-emerald-200',
-            error: 'border-red-500/60 bg-red-900/80 text-red-200',
-            warning: 'border-amber-500/60 bg-amber-900/80 text-amber-200',
-            info: 'border-green-500/60 bg-green-900/80 text-green-200',
+            success: 'border-emerald-200 bg-white text-emerald-800 shadow-xl',
+            error: 'border-red-200 bg-white text-red-800 shadow-xl',
+            warning: 'border-amber-200 bg-white text-amber-800 shadow-xl',
+            info: 'border-green-200 bg-white text-green-800 shadow-xl',
         };
         const icons = {
             success: '✓',
@@ -20,7 +20,7 @@ const UI = {
         };
 
         const toast = document.createElement('div');
-        toast.className = `toast flex items-center gap-3 px-5 py-4 rounded-xl border backdrop-blur-md text-base font-medium shadow-2xl ${colors[type] || colors.info}`;
+        toast.className = `toast flex items-center gap-3 px-5 py-4 rounded-xl border z-[999] backdrop-blur-md text-base font-medium shadow-2xl ${colors[type] || colors.info}`;
         toast.innerHTML = `
       <span class="text-xl font-bold">${icons[type] || icons.info}</span>
       <span>${message}</span>
@@ -70,10 +70,10 @@ const UI = {
             const overlay = document.getElementById('modal-overlay');
             const modal = document.getElementById('modal-box');
             modal.innerHTML = `
-        <h2 class="text-2xl font-bold text-green-200 mb-3">${title}</h2>
-        <p class="text-green-300/80 text-lg mb-8">${message}</p>
+        <h2 class="text-2xl font-bold text-green-900 mb-3">${title}</h2>
+        <p class="text-green-800/80 text-lg mb-8">${message}</p>
         <div class="flex gap-4 justify-end">
-          <button id="modal-cancel" class="btn btn-ghost text-lg px-8 py-3">Cancel</button>
+          <button id="modal-cancel" class="btn btn-ghost text-green-800 text-lg px-8 py-3 hover:bg-green-100">Cancel</button>
           <button id="modal-confirm" class="btn ${confirmClass} text-lg px-8 py-3">${confirmText}</button>
         </div>
       `;
