@@ -178,28 +178,25 @@ const SearchView = {
         }
 
         const html = results.map(book => `
-      <div class="glass-card hover:border-green-400/50 p-6 rounded-2xl flex gap-6 cursor-pointer transition-all active:scale-[0.99] group overflow-hidden relative" onclick="SearchView.viewDetails(${book.book_id})">
+      <div class="bg-white hover:bg-green-50 border border-green-200 shadow-sm p-8 rounded-3xl flex gap-6 cursor-pointer transition-all active:scale-[0.98] group overflow-hidden relative touch-manipulation" onclick="SearchView.viewDetails(${book.book_id})">
          <!-- highlight flare -->
-         <div class="absolute -inset-0 bg-gradient-to-r from-green-400/0 via-green-400/5 to-green-400/0 -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
+         <div class="absolute -inset-0 bg-gradient-to-r from-green-300/0 via-green-300/10 to-green-300/0 -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
 
-         <div class="w-16 h-24 bg-green-950/80 border border-green-500/30 rounded flex-shrink-0 flex flex-col items-center justify-center shadow-lg">
-            <svg class="w-8 h-8 text-green-500/50 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-         </div>
          <div class="flex-1 min-w-0 flex flex-col justify-center">
-            <h4 class="text-2xl font-bold text-white mb-1 truncate">${book.title}</h4>
-            <div class="text-green-300/80 text-sm mb-3 truncate flex gap-3">
-               <span><strong class="text-green-500 mr-1">By</strong> ${book.authors.length ? book.authors.join(', ') : 'Unknown'}</span>
-               <span class="text-green-500/50">•</span>
-               <span><strong class="text-green-500 mr-1">Year</strong> ${book.publication_year || 'Unknown'}</span>
+            <h4 class="text-3xl font-extrabold text-gray-900 mb-2 truncate">${book.title}</h4>
+            <div class="text-gray-600 text-lg mb-4 truncate flex gap-3">
+               <span><strong class="text-green-700 mr-1">By</strong> ${book.authors.length ? book.authors.join(', ') : 'Unknown'}</span>
+               <span class="text-gray-300">•</span>
+               <span><strong class="text-green-700 mr-1">Year</strong> ${book.publication_year || 'Unknown'}</span>
             </div>
             
-            <p class="text-green-100/60 text-sm line-clamp-2 leading-relaxed max-w-4xl">
+            <p class="text-gray-700 text-base line-clamp-2 leading-relaxed max-w-4xl">
                ${book.summary || book.subtitle || 'No description available for this book.'}
             </p>
          </div>
-         <div class="flex flex-col justify-end items-end shrink-0 pl-4 border-l border-green-500/20">
-            <div class="text-xs text-green-500/50 uppercase tracking-widest font-bold mb-1 mr-1">Available Copies</div>
-            <div class="text-3xl font-black ${book.total_copies > 0 ? 'text-emerald-400' : 'text-red-400'} mr-1">${book.total_copies}</div>
+         <div class="flex flex-col justify-center items-end shrink-0 pl-6 border-l border-gray-200">
+            <div class="text-sm text-gray-500 uppercase tracking-widest font-bold mb-2">Available Copies</div>
+            <div class="text-4xl font-black ${book.total_copies > 0 ? 'text-green-600' : 'text-red-500'}">${book.total_copies}</div>
          </div>
       </div>
     `).join('');
@@ -226,12 +223,12 @@ const SearchView = {
 
     renderDetails(book) {
         const copiesHtml = book.copies.length === 0 ?
-            '<div class="p-6 text-center text-green-400/50 border border-green-500/10 rounded-2xl">No physical copies configured in the system.</div>' :
+            '<div class="p-6 text-center text-gray-500 border border-gray-200 rounded-2xl">No physical copies configured in the system.</div>' :
             book.copies.map(c => `
-           <div class="border border-green-500/20 rounded-xl p-4 bg-black/40 flex justify-between items-center hover:bg-green-900/10">
+           <div class="border border-green-200 rounded-xl p-4 bg-green-50 flex justify-between items-center hover:bg-green-100 transition-colors">
               <div>
-                 <div class="font-mono text-xs text-green-300/50 mb-1">NFC: ${c.nfc_id}</div>
-                 <div class="text-green-100 font-bold">${c.location.floor_name} • ${c.location.section_name} • Shelf ${c.location.shelf_code}</div>
+                 <div class="font-mono text-xs text-gray-500 mb-1">NFC: ${c.nfc_id}</div>
+                 <div class="text-gray-900 font-bold">${c.location.floor_name} • ${c.location.section_name} • Shelf ${c.location.shelf_code}</div>
               </div>
               <div>${UI.statusBadge(c.status)}</div>
            </div>
@@ -242,50 +239,53 @@ const SearchView = {
         const modal = document.getElementById('modal-box');
 
         // Override the modal box classes to be huge for book detail
-        modal.className = "modal-inner glass-card p-0 rounded-3xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300 transform scale-95 opacity-0";
+        modal.className = "modal-inner bg-white p-0 rounded-3xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300 transform scale-95 opacity-0";
 
         modal.innerHTML = `
-        <div class="flex-1 overflow-y-auto custom-scroll p-10 flex flex-col">
+        <div class="flex-1 overflow-hidden p-10 flex flex-col h-full">
            <!-- Top strip -->
-           <div class="flex gap-4 mb-4 items-center mb-8">
-              <span class="px-3 py-1 bg-green-900/50 border border-green-500/30 rounded-full text-xs font-bold text-green-300 tracking-wider">${book.category_name}</span>
-              ${book.isbn ? `<span class="px-2 py-1 flex items-center gap-2 font-mono text-xs text-green-500/70"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg> ISBN: ${book.isbn}</span>` : ''}
-              <div class="flex-1 border-b border-green-900/50 self-center"></div>
-              <button onclick="document.getElementById('modal-overlay').classList.add('hidden')" class="btn btn-ghost rounded-full w-12 h-12 p-0 flex items-center justify-center text-green-500 hover:text-white bg-green-900/40 border border-green-500/30">
+           <div class="flex gap-4 mb-4 items-center mb-6 shrink-0">
+              <span class="px-3 py-1 bg-green-100 border border-green-200 rounded-full text-xs font-bold text-green-800 tracking-wider">${book.category_name}</span>
+              ${book.isbn ? `<span class="px-2 py-1 flex items-center gap-2 font-mono text-xs text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg> ISBN: ${book.isbn}</span>` : ''}
+              <div class="flex-1 border-b border-gray-200 self-center"></div>
+              <button onclick="document.getElementById('modal-overlay').classList.add('hidden')" class="btn btn-ghost rounded-full w-12 h-12 p-0 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 bg-white border border-gray-200 shadow-sm transition-colors">
                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
            </div>
            
-           <h2 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-100 to-emerald-200 mb-2 leading-tight py-1">${book.title}</h2>
-           ${book.subtitle ? `<h3 class="text-2xl text-green-300/80 font-light mb-4">${book.subtitle}</h3>` : ''}
-           
-           <div class="text-lg text-green-400 mb-8 font-medium">By <span class="text-green-200">${book.authors.length ? book.authors.join(', ') : 'Unknown'}</span></div>
-           
-           <div class="grid grid-cols-[1fr_350px] gap-12 flex-1">
-              <div>
-                 <h4 class="text-xl font-bold text-green-500/80 border-b border-green-500/20 pb-2 mb-4 uppercase tracking-widest text-sm">Summary</h4>
-                 <p class="text-green-100/80 leading-relaxed text-lg mb-8 whitespace-pre-wrap">${book.summary || 'No summary available.'}</p>
-                 
-                 <div class="grid grid-cols-2 gap-4 bg-green-950/30 rounded-2xl border border-green-500/20 p-6 mt-auto">
-                    <div><span class="text-green-500/60 block text-xs uppercase mb-1">Publisher</span> <span class="text-green-100">${book.publisher || '—'}</span></div>
-                    <div><span class="text-green-500/60 block text-xs uppercase mb-1">Year</span> <span class="text-green-100">${book.publication_year || '—'}</span></div>
-                    <div><span class="text-green-500/60 block text-xs uppercase mb-1">Pages</span> <span class="text-green-100">${book.pages || '—'}</span></div>
-                    <div><span class="text-green-500/60 block text-xs uppercase mb-1">Language</span> <span class="text-green-100">${book.language || '—'}</span></div>
-                 </div>
-              </div>
-              
-              <div class="border-l border-green-500/20 pl-8 flex flex-col">
-                 <h4 class="text-xl font-bold text-green-500/80 border-b border-green-500/20 pb-2 mb-4 uppercase tracking-widest text-sm flex justify-between items-end">
-                    Copies & Locations
-                    <span class="text-xs font-mono text-green-400 bg-green-900/50 px-2 py-0.5 rounded-full">${book.total_copies} total</span>
-                 </h4>
-                 <div class="flex-1 overflow-y-auto custom-scroll space-y-3 pr-2">
-                    ${copiesHtml}
-                 </div>
-              </div>
+           <div class="flex-1 overflow-y-auto custom-scroll pr-4 pb-4">
+               <h2 class="text-5xl font-black text-gray-900 mb-2 leading-tight py-1">${book.title}</h2>
+               ${book.subtitle ? `<h3 class="text-2xl text-gray-600 font-light mb-4">${book.subtitle}</h3>` : ''}
+               
+               <div class="text-lg text-gray-500 mb-8 font-medium">By <span class="text-green-700 font-bold">${book.authors.length ? book.authors.join(', ') : 'Unknown'}</span></div>
+               
+               <div class="grid grid-cols-[1fr_350px] gap-12">
+                  <div class="flex flex-col">
+                     <h4 class="text-xl font-bold text-gray-700 border-b border-gray-200 pb-2 mb-4 uppercase tracking-widest text-sm">Summary</h4>
+                     
+                     <p class="text-gray-700 leading-relaxed text-xl mb-8 whitespace-pre-wrap">${book.summary || 'No summary available.'}</p>
+                     
+                     <div class="grid grid-cols-2 gap-4 bg-gray-50 rounded-2xl border border-gray-200 p-6 mt-auto">
+                        <div><span class="text-gray-500 block text-xs uppercase mb-1">Publisher</span> <span class="text-gray-900 font-bold">${book.publisher || '—'}</span></div>
+                        <div><span class="text-gray-500 block text-xs uppercase mb-1">Year</span> <span class="text-gray-900 font-bold">${book.publication_year || '—'}</span></div>
+                        <div><span class="text-gray-500 block text-xs uppercase mb-1">Pages</span> <span class="text-gray-900 font-bold">${book.pages || '—'}</span></div>
+                        <div><span class="text-gray-500 block text-xs uppercase mb-1">Language</span> <span class="text-gray-900 font-bold">${book.language || '—'}</span></div>
+                     </div>
+                  </div>
+                  
+                  <div class="border-l border-gray-200 pl-8 flex flex-col">
+                     <h4 class="text-xl font-bold text-gray-700 border-b border-gray-200 pb-2 mb-4 uppercase tracking-widest text-sm flex justify-between items-end">
+                        Copies & Locations
+                        <span class="text-xs font-mono text-green-800 bg-green-100 px-2 py-0.5 rounded-full">${book.total_copies} total</span>
+                     </h4>
+                     <div class="space-y-3">
+                        ${copiesHtml}
+                     </div>
+                  </div>
+               </div>
            </div>
         </div>
-     `;
+      `;
 
         overlay.classList.remove('hidden');
         // Small delay for CSS transition trigger
@@ -300,7 +300,7 @@ const SearchView = {
                 setTimeout(() => {
                     overlay.classList.add('hidden');
                     // Reset classes back to normal modal
-                    modal.className = "modal-inner glass-card p-10 rounded-3xl w-full max-w-md shadow-2xl relative transition-all duration-300 transform scale-95 opacity-0";
+                    modal.className = "modal-inner bg-white p-10 rounded-3xl w-full max-w-md shadow-2xl relative transition-all duration-300 transform scale-95 opacity-0";
                     overlay.removeEventListener('click', closeHandler);
                 }, 250);
             }

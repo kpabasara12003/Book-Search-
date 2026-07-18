@@ -67,13 +67,13 @@ async def search_books_semantic(
 
 @router.get("/search/standard", response_model=list[BookResponse])
 async def search_books_standard(
-    query: str = Query(None, description="Search query by title"),
+    query: str = Query(None, description="Search query by title or author"),
     category_id: int | None = Query(None, description="Optional category filter"),
     limit: int = Query(10, ge=1, le=50),
     db: asyncpg.Connection = Depends(get_raw_db)
 ):
     """
-    Standard SQL search using ILIKE on title and exact category match.
+    Standard SQL search using ILIKE on title and author, and exact category match.
     """
     if not query and not category_id:
         raise HTTPException(status_code=400, detail="Must provide query or category_id.")
@@ -83,7 +83,7 @@ async def search_books_standard(
     
     if query and query.strip():
         params.append(f"%{query.strip()}%")
-        conditions.append(f"b.title ILIKE ${len(params)}")
+        conditions.append(f"(b.title ILIKE ${len(params)} OR a.author_name ILIKE ${len(params)})")
         
     if category_id:
         params.append(category_id)
