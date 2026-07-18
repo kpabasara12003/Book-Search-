@@ -38,8 +38,8 @@ _BOOK_SELECT_SQL = """
     LEFT JOIN authors a ON ba.author_id = a.author_id
 """
 
-@router.get("/search", response_model=list[BookResponse])
-async def search_books(
+@router.get("/search/semantic", response_model=list[BookResponse])
+async def search_books_semantic(
     query: str = Query(..., description="Natural language search query"),
     limit: int = Query(5, ge=1, le=50),
     db: asyncpg.Connection = Depends(get_raw_db)
@@ -63,6 +63,40 @@ async def search_books(
     )
     id_to_row = {row["book_id"]: row for row in raw_rows}
     return [_row_to_book_response(id_to_row[bid]) for bid in matched_ids if bid in id_to_row]
+
+
+@router.get("/search/standard", response_model=list[BookResponse])
+async def search_books_standard(
+    query: str = Query(None, description="Search query by title"),
+    category_id: int | None = Query(None, description="Optional category filter"),
+    limit: int = Query(10, ge=1, le=50),
+    db: asyncpg.Connection = Depends(get_raw_db)
+):
+    """
+    Standard SQL search using ILIKE on title and exact category match.
+    """
+    if not query and not category_id:
+        raise HTTPException(status_code=400, detail="Must provide query or category_id.")
+
+    params = []
+    conditions = []
+    
+    if query and query.strip():
+        params.append(f"%{query.strip()}%")
+        conditions.append(f"b.title ILIKE ${len(params)}")
+        
+    if category_id:
+        params.append(category_id)
+        conditions.append(f"b.category_id = ${len(params)}")
+        
+    where = "WHERE " + " AND ".join(conditions) if conditions else ""
+    limit_clause = f" LIMIT ${len(params) + 1}"
+    params.append(limit)
+    
+    full_sql = f"{_BOOK_SELECT_SQL} {where} GROUP BY b.book_id, c.category_name ORDER BY b.title {limit_clause}"
+    
+    raw_rows = await db.fetch(full_sql, *params)
+    return [_row_to_book_response(row) for row in raw_rows]
 
 
 

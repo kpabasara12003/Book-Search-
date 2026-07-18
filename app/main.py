@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from app.database import db_manager
 from app.services.embedding import embedding_service
 from app.services.vector_db import vdb_manager
-
+from fastapi.middleware.cors import CORSMiddleware
 from app.routers import students, books, copies, location, borrows, fines, catalog
 
 
@@ -26,6 +26,17 @@ app = FastAPI(
     version="1.2.0",
     lifespan=lifespan,
     swagger_ui_parameters={"tryItOutEnabled": True},
+)
+#anyone
+origins = ["*"]
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,           # Allows requests from specified origins
+    allow_credentials=True,
+    allow_methods=["*"],             # Allows all methods (GET, POST, OPTIONS, PUT, etc.)
+    allow_headers=["*"],             # Allows all headers (Content-Type, Authorization, etc.)
 )
 
 
