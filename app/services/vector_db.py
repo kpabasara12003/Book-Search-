@@ -45,7 +45,7 @@ class QdrantManager:
         """Removes a conflicting orphan point from Qdrant."""
         await self.client.delete(collection_name=self.collection_name, points_selector=[point_id])
 
-    async def upsert_book_vectors(self, book_id: int, dense: list[float], sparse: dict[int, float], isbn: str | None, title: str, year: int | None):
+    async def upsert_book_vectors(self, book_id: int, dense: list[float], sparse: dict[int, float], isbn: str | None, title: str, year: int | None, subtitle: str | None = None, summary: str | None = None):
         """Indexes vector pair along with core metadata fields for precise lookup tracking."""
         indices = list(sparse.keys())
         values = list(sparse.values())
@@ -62,7 +62,9 @@ class QdrantManager:
                     payload={
                         "isbn": isbn,
                         "title": title,
-                        "publication_year": year
+                        "publication_year": year,
+                        "subtitle": subtitle,
+                        "summary": summary
                     }
                 )
             ]

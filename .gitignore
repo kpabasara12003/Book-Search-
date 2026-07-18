@@ -4,7 +4,7 @@ requirementsgo.txt
 __pycache__/
 .cache/
 .pytest_cache/
-*.pyc
+.pyc
 *.pyo
 *.pyd
 *.pyc
@@ -15,5 +15,5 @@ __pycache__/
 .pytest_cache/
 .vscode/
 .idea/
-NewDB.
+NewDB.sql
 Admin/

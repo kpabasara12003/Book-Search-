@@ -140,7 +140,7 @@ async def create_book(payload: BookCreate, db: asyncpg.Connection = Depends(get_
     if pg_book and qdrant_id is None:
         target_id = pg_book["book_id"]
         dense_vec, sparse_vec = await embedding_service.get_hybrid_embeddings(context_string)
-        await vdb_manager.upsert_book_vectors(book_id=target_id, dense=dense_vec, sparse=sparse_vec, isbn=payload.isbn, title=payload.title, year=payload.publication_year)
+        await vdb_manager.upsert_book_vectors(book_id=target_id, dense=dense_vec, sparse=sparse_vec, isbn=payload.isbn, title=payload.title, year=payload.publication_year, subtitle=payload.subtitle, summary=payload.summary)
         return {"status": "healed", "book_id": target_id, "message": "Qdrant index repaired for existing PostgreSQL record."}
 
     if qdrant_id is not None and not pg_book:
@@ -164,7 +164,7 @@ async def create_book(payload: BookCreate, db: asyncpg.Connection = Depends(get_
             if count != len(author_ids):
                 raise HTTPException(status_code=400, detail="One or more Author IDs are invalid.")
             await db.execute("INSERT INTO book_authors (book_id, author_id) SELECT $1, unnest($2::int[])", book_id, author_ids)
-            await vdb_manager.upsert_book_vectors(book_id=book_id, dense=dense_vec, sparse=sparse_vec, isbn=payload.isbn, title=payload.title, year=payload.publication_year)
+            await vdb_manager.upsert_book_vectors(book_id=book_id, dense=dense_vec, sparse=sparse_vec, isbn=payload.isbn, title=payload.title, year=payload.publication_year, subtitle=payload.subtitle, summary=payload.summary)
     except asyncpg.UniqueViolationError:
         raise HTTPException(status_code=400, detail="A book with this ISBN already exists.")
     except HTTPException:
@@ -195,7 +195,7 @@ async def update_book(book_id: int, payload: BookUpdate, db: asyncpg.Connection 
         merged = {**dict(book), **updates}
         context_string = f"Title: {merged['title']}. Subtitle: {merged.get('subtitle') or ''}. Context: {merged.get('summary') or ''}"
         dense_vec, sparse_vec = await embedding_service.get_hybrid_embeddings(context_string)
-        await vdb_manager.upsert_book_vectors(book_id=book_id, dense=dense_vec, sparse=sparse_vec, isbn=merged.get("isbn"), title=merged["title"], year=merged.get("publication_year"))
+        await vdb_manager.upsert_book_vectors(book_id=book_id, dense=dense_vec, sparse=sparse_vec, isbn=merged.get("isbn"), title=merged["title"], year=merged.get("publication_year"), subtitle=merged.get("subtitle"), summary=merged.get("summary"))
 
     return {"status": "success", "book_id": book_id, "updated_fields": list(updates.keys())}
 
