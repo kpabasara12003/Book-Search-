@@ -46,13 +46,13 @@ The backend provides all the computational power, data persistence, and intellig
 
 The frontend is intentionally designed to run natively as a **Self-Service Kiosk Terminal**. It sidesteps heavy reactive frameworks in favor of a lightning-fast, state-driven Vanilla JS stack accompanied by a custom light-theme Tailwind CSS aesthetic (emphasizing clean whites and soft library greens). 
 
-### 🎨 Frontend Highlights
+###  Frontend Highlights
 - **True Touch Kiosk Mode**: Traditional desktop interactions (right-click, pinch-to-zoom context menus) are disabled out-of-the-box (`e.preventDefault()` via `app.js`). It expects human fingers, not mouse points.
 - **Seamless State Navigation**: Uses a robust custom view-routing history buffer (`home`, `identify`, `dashboard`, `search`, `borrow`, `return`). Views transition fluidly natively without hard browser reloads.
 - **Idle Security**: Idle timers actively monitor touch events. If a student walks away mid-session, the kiosk automatically securely clears their `STATE` and returns to the home page.
 - **Minimalist Aesthetic**: Features a highly accessible, fast-rendering light mode with crisp typography perfectly suited to brightly lit campus library floors.
 
-### 📂 Frontend Flow
+###  Frontend Flow
 - **`js/app.js` & `js/state.js`**: The foundational controllers tracking the globally logged-in `student` context, managing the view stack, preventing interface deadends, and clocking the top bar UI.
 - **`js/views/` folder**: Visual layout modules managing discrete states (e.g., `identify.js` prompts the user for their NFC scan; `search.js` hits the API to display semantic book cards; `borrow.js` manages cart checkout logistics).
 - **`js/api.js`**: A centralized, asynchronous fetch wrapper mapping all visual requests back to the FastAPI `/search/standard`, `/users/login`, or `/fines` endpoints cleanly.
