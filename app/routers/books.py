@@ -1,3 +1,4 @@
+# app/routers/books.py
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 import asyncpg
 from app.database import get_raw_db
@@ -46,12 +47,15 @@ async def search_books_semantic(
 ):
     """
     Hybrid semantic + keyword search powered by BGE-M3 and Qdrant RRF.
-    Returns books ranked by relevance with shelf location and availability.
     """
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query text cannot be empty.")
 
-    dense_query, sparse_query = await embedding_service.get_hybrid_embeddings(query)
+    # OPTIONAL PROMPT IMPROVEMENT: BGE-M3 handles asymmetric search significantly better
+    # if you instruct the query side on what it's looking for.
+    processed_query = f"Represent this sentence for searching relevant book passages: {query.strip()}"
+
+    dense_query, sparse_query = await embedding_service.get_hybrid_embeddings(processed_query)
     matched_ids = await vdb_manager.hybrid_search(dense_query=dense_query, sparse_query=sparse_query, limit=limit)
 
     if not matched_ids:
@@ -63,7 +67,6 @@ async def search_books_semantic(
     )
     id_to_row = {row["book_id"]: row for row in raw_rows}
     return [_row_to_book_response(id_to_row[bid]) for bid in matched_ids if bid in id_to_row]
-
 
 @router.get("/search/standard", response_model=list[BookResponse])
 async def search_books_standard(
@@ -152,36 +155,67 @@ async def get_book_copies(book_id: int, db: asyncpg.Connection = Depends(get_raw
 async def create_book(payload: BookCreate, db: asyncpg.Connection = Depends(get_raw_db)):
     """
     Bulletproof ingestion: detects out-of-sync states between PostgreSQL and Qdrant
-    and runs self-healing routines automatically.
+    and runs self-healing routines automatically. Stripped of structural noise 
+    to maximize summary search accuracy.
     """
-    category_check = await db.fetchval("SELECT category_id FROM book_categories WHERE category_id = $1", payload.category_id)
+    # 1. Structural Pre-validation
+    category_check = await db.fetchval(
+        "SELECT category_id FROM book_categories WHERE category_id = $1", 
+        payload.category_id
+    )
     if not category_check:
-        raise HTTPException(status_code=400, detail=f"Category '{payload.category_id}' does not exist.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Category '{payload.category_id}' does not exist."
+        )
 
+    # 2. Check current synchronization states across engines
     pg_book = None
     if payload.isbn:
         pg_book = await db.fetchrow("SELECT book_id FROM books WHERE isbn = $1", payload.isbn)
     else:
-        pg_book = await db.fetchrow("SELECT book_id FROM books WHERE title = $1 AND publication_year = $2", payload.title, payload.publication_year)
+        pg_book = await db.fetchrow(
+            "SELECT book_id FROM books WHERE title = $1 AND publication_year = $2", 
+            payload.title, payload.publication_year
+        )
 
-    qdrant_id = await vdb_manager.find_book_by_unique_fields(payload.isbn, payload.title, payload.publication_year)
-
-    context_string = f"Title: {payload.title}. Subtitle: {payload.subtitle or ''}. Context: {payload.summary or ''}"
+    qdrant_id = await vdb_manager.find_book_by_unique_fields(
+        payload.isbn, payload.title, payload.publication_year
+    )
 
     if pg_book and qdrant_id is not None:
-        raise HTTPException(status_code=400, detail=f"Book already exists. Postgres ID: {pg_book['book_id']}, Qdrant ID: {qdrant_id}.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Book already exists. Postgres ID: {pg_book['book_id']}, Qdrant ID: {qdrant_id}."
+        )
 
+    # 3. Standardize text structure for high-accuracy asymmetric search
+    text_components = [payload.title, payload.subtitle, payload.summary]
+    context_string = "\n".join([item for item in text_components if item]).strip()
+
+    # Self-healing path: Postgres record exists but Qdrant index is missing
     if pg_book and qdrant_id is None:
         target_id = pg_book["book_id"]
         dense_vec, sparse_vec = await embedding_service.get_hybrid_embeddings(context_string)
-        await vdb_manager.upsert_book_vectors(book_id=target_id, dense=dense_vec, sparse=sparse_vec, isbn=payload.isbn, title=payload.title, year=payload.publication_year, subtitle=payload.subtitle, summary=payload.summary)
-        return {"status": "healed", "book_id": target_id, "message": "Qdrant index repaired for existing PostgreSQL record."}
+        await vdb_manager.upsert_book_vectors(
+            book_id=target_id, dense=dense_vec, sparse=sparse_vec, 
+            isbn=payload.isbn, title=payload.title, year=payload.publication_year, 
+            subtitle=payload.subtitle, summary=payload.summary
+        )
+        return {
+            "status": "healed", 
+            "book_id": target_id, 
+            "message": "Qdrant index repaired for existing PostgreSQL record."
+        }
 
+    # Clean up orphan vectors in Qdrant before proceeding with fresh entry creation
     if qdrant_id is not None and not pg_book:
         await vdb_manager.delete_point(qdrant_id)
 
+    # 4. Generate embeddings outside the relational database transaction window
     dense_vec, sparse_vec = await embedding_service.get_hybrid_embeddings(context_string)
 
+    # 5. Core transactional execution block
     try:
         async with db.transaction():
             book_id = await db.fetchval(
@@ -193,20 +227,48 @@ async def create_book(payload: BookCreate, db: asyncpg.Connection = Depends(get_
                 payload.edition, payload.language, payload.publication_year,
                 payload.pages, payload.summary, payload.category_id
             )
+            
             author_ids = list(set(payload.author_ids))
-            count = await db.fetchval("SELECT count(*) FROM authors WHERE author_id = ANY($1::int[])", author_ids)
+            count = await db.fetchval(
+                "SELECT count(*) FROM authors WHERE author_id = ANY($1::int[])", 
+                author_ids
+            )
             if count != len(author_ids):
-                raise HTTPException(status_code=400, detail="One or more Author IDs are invalid.")
-            await db.execute("INSERT INTO book_authors (book_id, author_id) SELECT $1, unnest($2::int[])", book_id, author_ids)
-            await vdb_manager.upsert_book_vectors(book_id=book_id, dense=dense_vec, sparse=sparse_vec, isbn=payload.isbn, title=payload.title, year=payload.publication_year, subtitle=payload.subtitle, summary=payload.summary)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail="One or more Author IDs are invalid."
+                )
+                
+            await db.execute(
+                "INSERT INTO book_authors (book_id, author_id) SELECT $1, unnest($2::int[])", 
+                book_id, author_ids
+            )
+            
+            # Upsert vectors safely inside the transaction block boundaries
+            await vdb_manager.upsert_book_vectors(
+                book_id=book_id, dense=dense_vec, sparse=sparse_vec, 
+                isbn=payload.isbn, title=payload.title, year=payload.publication_year, 
+                subtitle=payload.subtitle, summary=payload.summary
+            )
+            
     except asyncpg.UniqueViolationError:
-        raise HTTPException(status_code=400, detail="A book with this ISBN already exists.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="A book with this ISBN already exists."
+        )
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Write aborted, rollback complete. Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Write aborted, database rollback complete. Error: {str(e)}"
+        )
 
-    return {"status": "success", "book_id": book_id, "message": "Book inserted into PostgreSQL and indexed in Qdrant."}
+    return {
+        "status": "success", 
+        "book_id": book_id, 
+        "message": "Book inserted into PostgreSQL and indexed in Qdrant."
+    }
 
 
 @router.put("/{book_id}", status_code=status.HTTP_200_OK)
@@ -214,26 +276,49 @@ async def update_book(book_id: int, payload: BookUpdate, db: asyncpg.Connection 
     """Admin: update book metadata fields. Only provided fields are updated."""
     book = await db.fetchrow("SELECT * FROM books WHERE book_id = $1", book_id)
     if not book:
-        raise HTTPException(status_code=404, detail=f"Book {book_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"Book {book_id} not found."
+        )
 
     updates = payload.model_dump(exclude_none=True)
     if not updates:
         return {"status": "no-op", "message": "No fields provided to update."}
 
+    # Execute partial SQL metadata updates
     set_clauses = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(updates.keys()))
     values = list(updates.values())
     await db.execute(f"UPDATE books SET {set_clauses} WHERE book_id = $1", book_id, *values)
 
-    # Re-index in Qdrant if searchable fields changed
-    if any(k in updates for k in ("title", "subtitle", "summary")):
-        merged = {**dict(book), **updates}
-        context_string = f"Title: {merged['title']}. Subtitle: {merged.get('subtitle') or ''}. Context: {merged.get('summary') or ''}"
+    # Re-index in Qdrant only if fields that build the semantic profile changed
+    if any(key in updates for key in ("title", "subtitle", "summary")):
+        merged_record = {**dict(book), **updates}
+        
+        # Structure payload elements cleanly using clean spacing layout rules
+        text_components = [
+            merged_record['title'], 
+            merged_record.get('subtitle'), 
+            merged_record.get('summary')
+        ]
+        context_string = "\n".join([item for item in text_components if item]).strip()
+        
         dense_vec, sparse_vec = await embedding_service.get_hybrid_embeddings(context_string)
-        await vdb_manager.upsert_book_vectors(book_id=book_id, dense=dense_vec, sparse=sparse_vec, isbn=merged.get("isbn"), title=merged["title"], year=merged.get("publication_year"), subtitle=merged.get("subtitle"), summary=merged.get("summary"))
+        await vdb_manager.upsert_book_vectors(
+            book_id=book_id, 
+            dense=dense_vec, 
+            sparse=sparse_vec, 
+            isbn=merged_record.get("isbn"), 
+            title=merged_record["title"], 
+            year=merged_record.get("publication_year"), 
+            subtitle=merged_record.get("subtitle"), 
+            summary=merged_record.get("summary")
+        )
 
-    return {"status": "success", "book_id": book_id, "updated_fields": list(updates.keys())}
-
-
+    return {
+        "status": "success", 
+        "book_id": book_id, 
+        "updated_fields": list(updates.keys())
+    }
 @router.post("/{book_id}/authors", status_code=status.HTTP_200_OK)
 async def add_authors_to_book(book_id: int, payload: AddAuthorsToBookRequest, db: asyncpg.Connection = Depends(get_raw_db)):
     """Link additional authors to a book."""

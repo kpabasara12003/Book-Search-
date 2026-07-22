@@ -1,3 +1,4 @@
+# app/services/vector_db.py
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, SparseVectorParams, PointStruct, SparseVector, Prefetch, FusionQuery, Fusion, Filter, FieldCondition, MatchValue
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -75,8 +76,9 @@ class QdrantManager:
         response = await self.client.query_points(
             collection_name=self.collection_name,
             prefetch=[
-                Prefetch(query=dense_query, using="dense", limit=limit * 2),
-                Prefetch(query=sparse_obj, using="sparse", limit=limit * 2)
+                # Deepen candidate pools to 100 so RRF can evaluate a wider range of matches
+                Prefetch(query=dense_query, using="dense", limit=100),
+                Prefetch(query=sparse_obj, using="sparse", limit=100)
             ],
             query=FusionQuery(fusion=Fusion.RRF),
             limit=limit
